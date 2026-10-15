@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stok</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body onload="tampilStok(); cekRole()">
+
+<div class="sidebar">
+  <a href="dashboard.html">🏠 Dashboard</a>
+</div>
+
+<div class="content">
+  <div class="card">
+    <h2>Stok Bahan Ajar UT</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Cover</th>
+          <th>Kode Lokasi</th>
+          <th>Kode Barang</th>
+          <th>Nama Barang</th>
+          <th>Jenis Barang</th>
+          <th>Edisi</th>
+          <th>Stok</th>
+        </tr>
+      </thead>
+      <tbody id="tabelStok"></tbody>
+    </table>
+  </div>
+
+  <div class="card" id="formTambahData" style="display: none;">
+    <h3>Tambah Data</h3>
+
+    <label>Upload Cover</label>
+    <input type="file" id="cover" accept="image/*">
+    <img id="previewCover" width="120" style="margin-top:10px; display:none;">
+
+    <input id="kodeLokasi" placeholder="Kode Lokasi">
+    <input id="kodeBarang" placeholder="Kode Barang">
+    <input id="namaBarang" placeholder="Nama Barang">
+    <input id="jenisBarang" placeholder="Jenis Barang">
+    <input id="edisi" placeholder="Edisi">
+    <input id="stok" placeholder="Stok">
+    <button onclick="tambahStok()">Tambah</button>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/script.js"></script>
+
+</body>
+</html>
