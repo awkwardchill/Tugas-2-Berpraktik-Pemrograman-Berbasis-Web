@@ -1,54 +1,282 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
+
 <head>
-  <title>Stok</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stok Bahan Ajar UT</title>
+
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body onload="tampilStok(); cekRole()">
 
-<div class="sidebar">
-  <a href="dashboard.html">🏠 Dashboard</a>
-</div>
+<body>
 
-<div class="content">
-  <div class="card">
-    <h2>Stok Bahan Ajar UT</h2>
+<div id="app">
 
-    <table>
-      <thead>
-        <tr>
-          <th>Cover</th>
-          <th>Kode Lokasi</th>
-          <th>Kode Barang</th>
-          <th>Nama Barang</th>
-          <th>Jenis Barang</th>
-          <th>Edisi</th>
-          <th>Stok</th>
-        </tr>
-      </thead>
-      <tbody id="tabelStok"></tbody>
-    </table>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <a href="dashboard.html"><i class="fa-solid fa-home"></i> Dashboard</a>
+    <a href="stok.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> Stok Bahan Ajar</a>
+    <a href="tracking.html"><i class="fa-solid fa-truck"></i> Tracking Pengiriman</a>
   </div>
 
-  <div class="card" id="formTambahData" style="display: none;">
-    <h3>Tambah Data</h3>
+  <div class="content">
 
-    <label>Upload Cover</label>
-    <input type="file" id="cover" accept="image/*">
-    <img id="previewCover" width="120" style="margin-top:10px; display:none;">
+    <!-- ========================
+         FILTER CARD
+    ========================= -->
+    <div class="card filter-card">
+      <div class="filter-container">
 
-    <input id="kodeLokasi" placeholder="Kode Lokasi">
-    <input id="kodeBarang" placeholder="Kode Barang">
-    <input id="namaBarang" placeholder="Nama Barang">
-    <input id="jenisBarang" placeholder="Jenis Barang">
-    <input id="edisi" placeholder="Edisi">
-    <input id="stok" placeholder="Stok">
-    <button onclick="tambahStok()">Tambah</button>
+        <!-- FILTER UT DAERAH -->
+        <div class="filter-group">
+          <label>UT Daerah</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-building-columns"></i>
+            <select v-model="filterUpbjj" :class="{ 'has-value': filterUpbjj !== '' }">
+              <option value="" disabled selected hidden>Filter</option>
+              <option v-for="u in upbjjList" :key="u">{{ u }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- FILTER KATEGORI -->
+        <div class="filter-group" v-if="filterUpbjj">
+          <label>Kategori</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-layer-group"></i>
+            <select v-model="filterKategori" :class="{ 'has-value': filterKategori !== '' }">
+              <option value="" disabled selected hidden>Filter</option>
+              <option v-for="k in kategoriList" :key="k">{{ k }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SORT -->
+        <div class="filter-group">
+          <label>Urutkan</label>
+          <div class="input-icon">
+            <i class="fa-solid fa-arrow-down-wide-short"></i>
+            <select v-model="sortBy" :class="{ 'has-value': sortBy !== '' }">
+              <option value="" disabled selected hidden>Sort By</option>
+              <option value="judul">Judul</option>
+              <option value="qty">Jumlah Stok</option>
+              <option value="harga">Harga</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- CHECKBOX WARNING -->
+        <div class="filter-check">
+          <label class="checkbox-modern">
+            <input type="checkbox" v-model="onlyWarning">
+            <span class="checkmark"></span>
+            <span class="checkbox-text">Hanya stok menipis / kosong</span>
+          </label>
+        </div>
+
+        <!-- RESET FILTER -->
+        <div class="filter-action">
+          <button class="btn-reset" @click="resetFilter">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================
+         TABEL STOK
+    ========================= -->
+    <div class="card">
+
+      <div class="header-flex">
+        <h2>Stok Bahan Ajar UT</h2>
+        <button class="btn-primary" @click="openTambahForm">
+          <i class="fa-solid fa-plus"></i> Tambah Data
+        </button>
+      </div>
+
+      <table>
+          <colgroup>
+            <col style="width: 8%">    <!-- Kode -->
+            <col style="width: 18%">   <!-- Judul -->
+            <col style="width: 12%">    <!-- Kategori -->
+            <col style="width: 8%">    <!-- UPBJJ -->
+            <col style="width: 8%">    <!-- Lokasi Rak -->
+            <col style="width: 9%">    <!-- Harga -->
+            <col style="width: 5%">    <!-- Qty -->
+            <col style="width: 6%">    <!-- Safety -->
+            <col style="width: 10%">    <!-- Status -->
+            <col style="width: 17%">   <!-- Catatan -->
+            <col style="width: 8%">    <!-- Aksi -->
+          </colgroup>
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Judul</th>
+            <th>Kategori</th>
+            <th>UPBJJ</th>
+            <th>Lokasi Rak</th>
+            <th>Harga</th>
+            <th>Qty</th>
+            <th>Safety</th>
+            <th>Status</th>
+            <th>Catatan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr v-for="(item, index) in filteredData" :key="index">
+
+            <td class="col-nowrap">{{ item.kode }}</td>
+
+            <td class="col-wrap">
+              <input v-if="item.edit" v-model="item.judul">
+              <span v-else>{{ item.judul }}</span>
+            </td>
+
+            <td class="col-nowrap">{{ item.kategori }}</td>
+            <td class="col-nowrap">{{ item.upbjj }}</td>
+            <td class="col-nowrap">{{ item.lokasiRak }}</td>
+
+            <td class="col-nowrap">Rp {{ item.harga.toLocaleString() }}</td>
+
+            <td class="col-nowrap">
+              <input v-if="item.edit" type="number" v-model.number="item.qty" style="width:70px">
+              <span v-else>{{ item.qty }}</span>
+            </td>
+
+            <td class="col-nowrap">{{ item.safety }}</td>
+
+            <td class="col-nowrap">
+              <span :class="getStatusClass(item)">{{ getStatusText(item) }}</span>
+            </td>
+
+            <td class="col-wrap" v-html="item.catatanHTML"></td>
+
+            <td class="col-nowrap">
+              <!-- MODE NORMAL -->
+              <div v-if="!item.edit">
+                <button class="btn-primary btn-icon" @click="editData(item)">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button class="btn-danger btn-icon" @click="hapusData(index)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+
+              <!-- MODE EDIT -->
+              <div v-else>
+                <button class="btn-primary btn-icon" @click="editData(item, index)">
+                  <i class="fa-solid fa-save"></i>
+                </button>
+                <button class="btn-warning btn-icon" @click="batalEdit(item)">
+                  <i class="fa-solid fa-times"></i>
+                </button>
+              </div>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <!-- ========================
+         MODAL TAMBAH / EDIT
+    ========================= -->
+    <div class="modal-base modal-vue" v-if="showForm">
+      <div class="modal-content modal-form">
+
+        <!-- HEADER -->
+        <div class="modal-header">
+          <h2>{{ isEdit ? 'Edit Data Bahan Ajar' : 'Tambah Data Bahan Ajar' }}</h2>
+          <button class="modal-btn-close" @click="showForm = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- FORM -->
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Kode</label>
+            <input v-model="form.kode" placeholder="Masukkan Kode">
+          </div>
+
+          <div class="form-group">
+            <label>Judul</label>
+            <input v-model="form.judul" placeholder="Masukkan Judul">
+          </div>
+
+          <div class="form-group">
+            <label>Kategori</label>
+            <select v-model="form.kategori" :class="{ 'has-value': form.kategori !== '' }">
+              <option value="" disabled selected hidden>Pilih Kategori</option>
+              <option v-for="k in kategoriList" :key="k" :value="k">{{ k }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>UPBJJ</label>
+            <select v-model="form.upbjj" :class="{ 'has-value': form.upbjj !== '' }">
+              <option value="" disabled selected hidden>Pilih UPBJJ</option>
+              <option v-for="u in upbjjList" :key="u" :value="u">{{ u }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Lokasi Rak</label>
+            <input v-model="form.lokasiRak" placeholder="Contoh: R1-A1">
+          </div>
+
+          <div class="form-group">
+            <label>Harga</label>
+            <input type="number" v-model.number="form.harga" placeholder="Masukkan Harga">
+          </div>
+
+          <div class="form-group">
+            <label>Jumlah Stok</label>
+            <input type="number" v-model.number="form.qty" placeholder="Masukkan Stok">
+          </div>
+
+          <div class="form-group">
+            <label>Safety Stock</label>
+            <input type="number" v-model.number="form.safety" placeholder="Minimal Stok">
+          </div>
+
+          <div class="form-group full-width">
+            <label>Catatan</label>
+            <textarea v-model="form.catatanHTML" placeholder="Tambah Catatan..."></textarea>
+          </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="resetForm">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+          <button class="btn-save" @click="konfirmasiSimpan">
+            <i class="fa-solid fa-floppy-disk"></i>
+            {{ isEdit ? 'Update' : 'Simpan' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
 
-<script src="js/data.js"></script>
-<script src="js/script.js"></script>
+<script src="js/dataBahanAjar.js"></script>
+<script src="js/stok-app.js"></script>
 
 </body>
 </html>
